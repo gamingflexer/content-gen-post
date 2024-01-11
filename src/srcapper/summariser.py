@@ -7,11 +7,15 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.prompts import PromptTemplate
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
-from md2pdf.core import md2pdf
 from utils import zip_folder
 from decouple import config
 import uuid 
 import os
+
+try:
+    from md2pdf.core import md2pdf
+except:
+    print("md2pdf not installed, please install it using pip install md2pdf")
 
 OPEN_API_KEY = config("OPEN_API_KEY")
 
