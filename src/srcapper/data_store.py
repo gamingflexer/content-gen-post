@@ -3,9 +3,29 @@ import pandas as pd
 import datetime as dt
 import json
 
-def append_to_database(new_df, db_path='sqlite:///news_data.db', table_name='news_data'):
+def append_to_database(new_df, db_path='sqlite:///news_data.db', table_name='news_data', force = False):
     engine = create_engine(db_path, echo=False)
-    new_df.to_sql(table_name, con=engine, if_exists='append', index=False)
+    with engine.connect() as connection:
+        existing_df = pd.read_sql_table(table_name, con=connection)
+    existing_df['timestamp'] = pd.to_datetime(existing_df['timestamp'])
+    today_date = dt.date.today()
+    
+    if force:
+        new_df.to_sql(table_name, con=engine, if_exists='append', index=False)
+        print(f"Appended {len(new_df)} records to database.")
+        return
+    
+    existing_records_today = existing_df[existing_df['timestamp'].dt.date == today_date]
+    print(f"Found {len(existing_records_today)} records for today.")
+    if existing_records_today.empty:
+        new_df.to_sql(table_name, con=engine, if_exists='append', index=False)
+        print(f"Appended {len(new_df)} records to database.")
+    elif len(existing_records_today) < 5:
+        new_df.to_sql(table_name, con=engine, if_exists='append', index=False)
+        print(f"Appended {len(new_df)} records to database, because there were only {len(existing_records_today)} records for today.")
+    else:
+        print(f"Found {len(existing_records_today)} records for today. Skipping append.")
+
 
 def retrieve_records(db_path='sqlite:///news_data.db', table_name='news_data', date_range='today'):
     engine = create_engine(db_path, echo=False)
@@ -26,4 +46,6 @@ def retrieve_records(db_path='sqlite:///news_data.db', table_name='news_data', d
     
     result_df = filtered_df[['timestamp', 'news_text']]
     result_json = result_df.to_json(orient='records')
-    return json.loads(result_json)
+    output = json.loads(result_json)
+    print(f"Retrived {len(output)} records from database.")
+    return output
