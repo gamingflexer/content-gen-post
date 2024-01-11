@@ -1,0 +1,5 @@
+openai
+PyPDF2
+langchain
+langchain_openai
+python-decouple
