@@ -6,6 +6,16 @@ import tiktoken
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from datetime import datetime
+from zipfile import ZipFile
+
+def zip_folder(folder_path, zip_path):
+    with ZipFile(zip_path, 'w') as zipf:
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, folder_path)
+                zipf.write(file_path, arcname=arcname)
+
 
 def add_timestamp_column(dataframe):
     dataframe['timestamp'] = datetime.now()
@@ -169,4 +179,5 @@ def scrape_pdf_links(url):
         return []
 
 def flatten_pdf_links(links):
-        return [pdf_link for link in links for pdf_link in scrape_pdf_links(link)]
+  flat_data = [item for sublist in links for item in sublist]
+  return [re.search(r'https?://[^\s]+', item).group(0) for item in flat_data if re.search(r'https?://[^\s]+', item)]
