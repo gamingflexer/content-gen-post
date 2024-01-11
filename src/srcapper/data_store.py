@@ -41,11 +41,24 @@ def retrieve_records(db_path='sqlite:///news_data.db', table_name='news_data', d
     elif date_range == 'week':
         week_start = dt.date.today() - dt.timedelta(days=dt.date.today().weekday())
         filtered_df = df[df['timestamp'].dt.date >= week_start]
+        
+        # Sample 5 random records from each day in the week
+        sampled_records = []
+        for day in range(7):
+            day_date = week_start + dt.timedelta(days=day)
+            day_df = filtered_df[filtered_df['timestamp'].dt.date == day_date]
+            
+            if not day_df.empty:
+                sampled_day_records = day_df.sample(n=min(5, len(day_df)), random_state=42)
+                sampled_records.append(sampled_day_records)
+
+        # Combine the sampled records into a single DataFrame
+        filtered_df = pd.concat(sampled_records)
     else:
         raise ValueError("Invalid date_range. Use 'today' or 'week'.")
     
     result_df = filtered_df[['timestamp', 'news_text']]
     result_json = result_df.to_json(orient='records')
     output = json.loads(result_json)
-    print(f"Retrived {len(output)} records from database.")
+    print(f"Retrieved {len(output)} records from database.")
     return output
