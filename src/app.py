@@ -1,18 +1,21 @@
 import gradio as gr
 import time
 from uuid import uuid4
-from content_maker import scrapper_content
+from content_maker import scrapper_content,get_news_content
 
 def load_dataset_local():
     time.sleep(10)
-
-# Manual progress function
+    
 def daily_post_tqdm(new_exp_name, progress=gr.Progress()):
-    progress(0.2, desc="Collecting Images")
-    time.sleep(1)
-    progress(0.5, desc="Cleaning Images")
-    time.sleep(1.5)
-    progress(0.8, desc="Sending Images")
+    progress(0.2, desc="Collecting Links")
+    if scrapper_content:
+        progress(0.5, desc="Cleaning Links")
+        time.sleep(1.5)
+        
+    # Convert to content
+    content_raw = get_news_content(content_time= 'today')
+    
+    progress(0.8, desc="Saving Data")
     time.sleep(1.5)
     return "done"
 
