@@ -115,7 +115,19 @@ def get_longest_one(text_list):
             max_id = i
     return text_list[max_id]
 
-
+def extract_text_from_pdf(pdf_path):
+    try:
+        with open(pdf_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfFileReader(file)
+            text = ""
+            for page_num in range(pdf_reader.numPages):
+                page = pdf_reader.getPage(page_num)
+                text += page.extractText()
+            return text
+    except Exception as e:
+        print(f"Error extracting text from PDF: {e}")
+        return None
+    
 def extract_text_from_pdf_link(url):
 
    try:
