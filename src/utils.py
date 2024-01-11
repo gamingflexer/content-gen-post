@@ -26,7 +26,7 @@ def get_headlines(text):
 skip_domains = ['news.ycombinator.com']
 keywords = ['FB', 'Insta', 'Twitter', 'Youtube','pinterest','cloudflare', 'compliance', 'AutoDealerToday', 'news', 'search', 'blogs', 'login', 'issues', 'opinion' ,'awards', 'training', 'Reddit', 'tiktok','t.me', '#bc-favorites-modal', 'digitalmagazine', 'whitepapers', 'articles', 'videos', 'javascript', 'rss', 'digital' ,'Linkedin','legal','deals', 'free', 'press', 'coupons', 'offers', 'discounts', 'faq', 'about', 'contact', 'privacy', 'terms', 'conditions', 'policy', 'careers', 'help', 'support', 'subscribe']
 
-def filter_links_by_domain(links, target_domain):
+def filter_links_by_domain_main(links, target_domain):
     filtered_links = []
 
     for link in links:
@@ -82,7 +82,7 @@ def get_links(input_link):
     data = re.text
     soup = BeautifulSoup(data)
     final_links = [link.get('href') for link in soup.find_all('a')]
-    final_links = filter_links_by_domain(final_links,domain)
+    final_links = filter_links_by_domain_main(final_links,domain)
     if domain in skip_domains:
         print("Skipping domain: ", domain)
         return filter_links_based_keywords(remove_unwanted_links(list(set(final_links))),domain)
