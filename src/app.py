@@ -1,68 +1,83 @@
-from utils import scrape_pdf_links, flatten_pdf_links,regex_clean_links, extract_text_from_pdf_link, indivual_news_scrapper, get_longest_one, get_headlines, num_tokens_from_string, add_timestamp_column
-from srcapper.llm import get_good_links
-from srcapper.main import scrape_websites
-from srcapper.data_store import append_to_database, retrieve_records
-import pandas as pd
+import gradio as gr
+import time
+from uuid import uuid4
+from content_maker import scrapper_content
 
-website_links = ["https://resources.automotivemastermind.com/","https://www.autodealertodaymagazine.com/"]
-df = scrape_websites(website_links)
+def load_dataset_local():
+    time.sleep(10)
 
-df['pdf_links_inside_pages'] = df['links'].apply(lambda links: [scrape_pdf_links(link) for link in links])
-df['pdf_links_inside_pages'] = df['pdf_links_inside_pages'].apply(flatten_pdf_links)
-df['links_final'] = ""
-for i in range(len(df['links'])):
-    df['links_final'][i] = df['links'][i]
+# Manual progress function
+def daily_post_tqdm(new_exp_name, progress=gr.Progress()):
+    progress(0.2, desc="Collecting Images")
+    time.sleep(1)
+    progress(0.5, desc="Cleaning Images")
+    time.sleep(1.5)
+    progress(0.8, desc="Sending Images")
+    time.sleep(1.5)
+    return "done"
 
-df['prompt'] = ""
-for i in range(len(df['links'])):
-    domain = df['website_link'][i].replace("www.","").split("https://")[1].split("/")[0].replace(".com","")
-    print(domain)
-    prompt = f"This are the links from the website: {domain}.com and i want you to check which links are relevant to news/Blogs not generic links of the website like about single cars and return me them in a list"
-    df['prompt'][i] = prompt
+def daily_summarised_post_tqdm(exp_name, progress=gr.Progress()):
+    progress(0.2, desc="Collecting Images")
+    time.sleep(1)
+    progress(0.5, desc="Cleaning Images")
+    time.sleep(1.5)
+    progress(0.8, desc="Sending Images")
+    time.sleep(1.5)
+    return "done"
 
-df['good_links'] = ""
-for i in range(len(df['links'])):
-    print("Gpt : Getting Good Links", i, len(df['pdf_links_inside_pages']))
-    if len(df['pdf_links_inside_pages'][i]) == 0:
-      df['good_links'][i] = get_good_links(str(df['links_final'][i]),df['prompt'][i])
-    else:
-      df['good_links'][i] = []
+def weekly_summarised_post_tqdm(exp_name, progress=gr.Progress()):
+    progress(0.2, desc="Collecting Images")
+    time.sleep(1)
+    progress(0.5, desc="Cleaning Images")
+    time.sleep(1.5)
+    progress(0.8, desc="Sending Images")
+    time.sleep(1.5)
+    return "done"
 
-df['final_links'] = ""
-for i in range(len(df['good_links'])):
-    if df['good_links'][i] is not None:
-        if "sorry" not in df['good_links'][i]:
-            print(i)
-            if len(df['pdf_links_inside_pages'][i]) == 0:
-              df['final_links'][i] = regex_clean_links(df['good_links'][i])
-            else:
-              df['final_links'][i] = []
-              
-# df['final_links'] = df['final_links'].apply(lambda x: x[:5])
-df_news = pd.DataFrame(columns=['website_link', 'news_link', 'news_text'])
-for i in range(len(df['final_links'])):
-  if len(df['final_links'][i]) == 0:
-    for link in df['pdf_links_inside_pages'][i]:
-      df_news = pd.concat([df_news,pd.DataFrame([{'website_link': df['website_link'][i], 'news_link': link, 'news_text': extract_text_from_pdf_link(link)}])], ignore_index=True)
-  else:
-    for link in df['final_links'][i]:
-      if "search" or "auth" not in link.split("/"):
-          # print(link, ":", df['website_link'][i])
-          df_news = pd.concat([df_news,pd.DataFrame([{'website_link': df['website_link'][i], 'news_link': link, 'news_text': indivual_news_scrapper(link)}])], ignore_index=True)
+def pdf_rephrasing_tqdm(exp_name, progress=gr.Progress()):
+    progress(0.2, desc="Collecting Images")
+    time.sleep(1)
+    progress(0.5, desc="Cleaning Images")
+    time.sleep(1.5)
+    progress(0.8, desc="Sending Images")
+    time.sleep(1.5)
+    return "done"
 
-for i in range(len(df_news['news_text'])):
-    if len(df_news['news_text'][i]) < 10:
-        # drop the row
-        df_news.drop(i, inplace=True)
+with gr.Blocks() as demo:
+        
+    with gr.Tab("Daily Post of the Day"):
+        with gr.Row():
+          links_textbox = gr.Textbox(label="Enter the links of the websites you want to scrape (comma separated)")
+          pdf_files_upload = gr.File(label="Upload PDF files")
+        with gr.Row():
+            start_button_1 = gr.Button("Start")
+        loading_bar_text_1 = gr.Textbox(label="PreProcess Loading Bar")
+        
+    with gr.Tab("Daily Summarised POST"):
+        with gr.Row():
+            start_button_2 = gr.Button("Start")
+        loading_bar_text_2 = gr.Textbox(label="PreProcess Loading Bar")
+        with gr.Row():
+          download_button_2 = gr.Button("Download")
+        
+    with gr.Tab("Last Week Summarised POST"):
+        with gr.Row():
+            start_button_3 = gr.Button("Start")
+        loading_bar_text_3 = gr.Textbox(label="PreProcess Loading Bar")
+        with gr.Row():
+          download_button_3 = gr.Button("Download")
+        
+    with gr.Tab("Pdf article Rephrasing"):
+        with gr.Row():
+            pdf_files_upload_2 = gr.File(label="Upload PDF files")
+            start_button_4 = gr.Button("Start")
+        loading_bar_text_4 = gr.Textbox(label="PreProcess Loading Bar")
+        with gr.Row():
+          download_button_4 = gr.Button("Download")
+        
+    start_button_1.click(daily_post_tqdm, outputs=loading_bar_text_1)
+    start_button_2.click(daily_summarised_post_tqdm, outputs=loading_bar_text_2)
+    start_button_3.click(weekly_summarised_post_tqdm, outputs=loading_bar_text_3)
+    start_button_4.click(pdf_rephrasing_tqdm, outputs=loading_bar_text_4)
 
-df_news['news_text_split'] = df_news['news_text'].apply(lambda x: x.lower().split("follow"))
-df_news['news_text_split_final'] = df_news['news_text_split'].apply(lambda x: get_longest_one(x))
-df_news['headlines'] = df_news['news_link'].apply(lambda x : get_headlines(x))
-
-df_news['news_text_split_final'] =  df_news['headlines'] + ":" + df_news['news_text_split_final']
-df_news['news_text_len'] = df_news['news_text'].apply(lambda x : num_tokens_from_string(x))
-
-df_news = add_timestamp_column(df_news)
-df_news = df_news.drop("news_text_split", axis=1)
-append_to_database(df_news)
-result_today = retrieve_records(date_range='today')
+demo.launch(server_name='0.0.0.0', server_port=7866)
