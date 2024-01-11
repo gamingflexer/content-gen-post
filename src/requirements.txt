@@ -5,3 +5,4 @@ langchain_openai
 python-decouple
 gradio
 bs4
+md2pdf
