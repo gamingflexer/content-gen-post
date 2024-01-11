@@ -134,7 +134,8 @@ def weekly_news_summary(list_weekly_news):
 
 def weekly_news_blog(summary,content_type="LinkedIn Post"):
   post = content_gen(summary,content_type)
-  pdf_file_path = os.getcwd()+"/WeeklyBlog/abc.pdf"
+  os.makedirs("WeeklyBlog",  exist_ok=True)
+  pdf_file_path = os.getcwd()+"/WeeklyBlog/" + str(uuid.uuid4())+".pdf"
   md2pdf(pdf_file_path,
        md_content=post,
        md_file_path=None,
@@ -153,13 +154,19 @@ def rephrase(content):
         3. Action Verbs
         4. Freshness & Relevance
         Note: Generate the content in Markdown format
-
     Output:
     """)
 
-  model = ChatOpenAI(model_name="gpt-3.5-turbo-1106", temperature=0.5, api_key= OPEN_API_KEY)
+  model = ChatOpenAI(model_name="gpt-3.5-turbo-1106", temperature=0.4, api_key= OPEN_API_KEY)
   output_parser = StrOutputParser()
 
   chain = prompt | model | output_parser
   content = chain.invoke({"data":content})
-  return content
+  os.makedirs("rephrased_content",  exist_ok=True)
+  pdf_file_path = os.getcwd()+"/rephrased_content/" + str(uuid.uuid4())+".pdf"
+  md2pdf(pdf_file_path,
+       md_content=content,
+       md_file_path=None,
+       css_file_path=None,
+       base_url=None)
+  return pdf_file_path
