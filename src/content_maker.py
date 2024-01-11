@@ -3,8 +3,9 @@ from srcapper.llm import get_good_links
 from srcapper.main import scrape_websites
 from srcapper.data_store import append_to_database, retrieve_records
 import pandas as pd
+from utils import extract_text_from_pdf
 
-def scrapper_content(website_links, content_time = 'today', force = False):
+def scrapper_content(website_links, pdf_files_upload_list = [], content_time = 'today', force = False):
     website_links = []
 
     links = ["https://resources.automotivemastermind.com/","https://www.autodealertodaymagazine.com/"]
@@ -44,7 +45,7 @@ def scrapper_content(website_links, content_time = 'today', force = False):
                     df['final_links'][i] = []
                 
     # df['final_links'] = df['final_links'].apply(lambda x: x[:2]) ###
-
+    
     df_news = pd.DataFrame(columns=['website_link', 'news_link', 'news_text'])
     for i in range(len(df['final_links'])):
         if len(df['final_links'][i]) == 0:
@@ -60,6 +61,11 @@ def scrapper_content(website_links, content_time = 'today', force = False):
         if len(df_news['news_text'][i]) < 10:
             # drop the row
             df_news.drop(i, inplace=True)
+    
+    if len(pdf_files_upload_list) != 0:
+        for file in pdf_files_upload_list:
+            text = extract_text_from_pdf(file)
+            df_news = pd.concat([df_news,pd.DataFrame([{'website_link': "pdf", 'news_link': "pdf", 'news_text': text}])], ignore_index=True)
 
     df_news['news_text_split'] = df_news['news_text'].apply(lambda x: x.lower().split("follow"))
     df_news['news_text_split_final'] = df_news['news_text_split'].apply(lambda x: get_longest_one(x))
@@ -70,8 +76,3 @@ def scrapper_content(website_links, content_time = 'today', force = False):
 
     df_news = add_timestamp_column(df_news)
     df_news = df_news.drop("news_text_split", axis=1)
-    append_to_database(df_news, force)
-    return True
-  
-def get_news_content(content_time = 'today'):
-    return retrieve_records(date_range=content_time)
