@@ -3,6 +3,25 @@ import pandas as pd
 import datetime as dt
 import json
 
+def check_today_records(db_path='sqlite:///news_data.db', table_name='news_data'):
+    engine = create_engine(db_path, echo=False)
+
+    with engine.connect() as connection:
+        df = pd.read_sql_table(table_name, con=connection)
+
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+    today_date = dt.date.today()
+    today_records = df[df['timestamp'].dt.date == today_date]
+
+    if not today_records.empty:
+        print(f"Records for today ({today_date}): {len(today_records)}")
+        return True
+    else:
+        print(f"No records found for today.")
+        return False
+
+
 def append_to_database(new_df, db_path='sqlite:///news_data.db', table_name='news_data', force = False):
     engine = create_engine(db_path, echo=False)
     with engine.connect() as connection:
@@ -57,8 +76,10 @@ def retrieve_records(db_path='sqlite:///news_data.db', table_name='news_data', d
     else:
         raise ValueError("Invalid date_range. Use 'today' or 'week'.")
     
-    result_df = filtered_df[['timestamp', 'news_text']]
-    result_json = result_df.to_json(orient='records')
-    output = json.loads(result_json)
-    print(f"Retrieved {len(output)} records from database.")
-    return output
+    # result_df = filtered_df[['timestamp', 'news_text']]
+    # result_json = result_df.to_json(orient='records')
+    # output = json.loads(result_json)
+    print(f"We have records from database. {len(filtered_df)} records found.")
+    filtered_df = filtered_df[:5]
+    print(f"Retrieved records from database. {len(filtered_df)} records found.")
+    return filtered_df
