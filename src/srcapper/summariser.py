@@ -8,8 +8,10 @@ from langchain.prompts import PromptTemplate
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.llm import LLMChain
 from utils import zip_folder,num_tokens_from_string
+from tqdm import tqdm
+from datetime import datetime
 from decouple import config
-import uuid 
+import uuid, shutil
 import os
 
 try:
@@ -132,7 +134,6 @@ def content_gen_post(text,modelname):
 def remove_page_not_found(df):
     # Filter rows where 'news_text' contains "Page Not Found"
     df = df[~df['news_text'].str.contains("Page Not Found")]
-
     return df
 
 def summarizer_function(text):
@@ -160,8 +161,12 @@ def process_token(text , token, max_length):
 def news_summary(df):
   news = ""
   df_news = remove_page_not_found(df)
-  good_pages = df_news['news_text']
-  for i in range(len(good_pages)):
+  good_pages = df_news['news_text'].tolist()
+  print("-"*30)
+  print(type(good_pages))
+  # print(len(good_pages))
+  # print(good_pages)
+  for i in tqdm(range(len(good_pages))):
     news = news + " " + good_pages[i]
   final_summary = chain_summarizer(news)
   return final_summary
@@ -169,9 +174,9 @@ def news_summary(df):
 def summarized_daily_news_blog(summary):
   token = num_tokens_from_string(summary)
   token_check = process_token(summary, token, max_length = 127000)
-  blog = content_gen_blog(token_check, model = "gpt-4-1106-preview")
+  blog = content_gen_blog(token_check, modelname = "gpt-4-1106-preview")
   os.makedirs("Summarized_dailyBlog",  exist_ok=True)
-  pdf_file_path = os.getcwd()+"/Summarized_dailyBlog" +str(uuid.uuid4())+".pdf"
+  pdf_file_path = os.getcwd()+"/Summarized_dailyBlog/" +str(uuid.uuid4())+".pdf"
   md2pdf(pdf_file_path,
        md_content=blog,
        md_file_path=None,
@@ -179,49 +184,45 @@ def summarized_daily_news_blog(summary):
        base_url=None)
   return pdf_file_path
 
-
-
-from datetime import datetime
 def daily_post_single(df_news, content_type="LinkedIn Post"):
     # Get the current date for creating a folder with the date as its name
     current_date = datetime.now().strftime("%Y_%m_%d")
     
     # Create a folder for the current date
-    folder_path = os.path.join(os.getcwd(), "Single_daily_Posts", current_date)
+    folder_path = os.path.join(os.getcwd(), "Single_daily_Posts", current_date,"pdf")
     os.makedirs(folder_path, exist_ok=True)
     df_news = remove_page_not_found(df_news)
-    for index, row in df_news.iterrows():
+    for index, row in tqdm(df_news.iterrows()):
         token = num_tokens_from_string(row['news_text'])
         token_check = process_token(row['news_text'], token, max_length = 16000)
-        single_post = content_gen_post(token_check, model = "gpt-3.5-turbo-1106")
-        print(single_post)
+        single_post = content_gen_post(token_check, modelname = "gpt-3.5-turbo-1106")
+        # print(single_post)
         # Create a PDF file for each news item
-        txt_file_path = os.path.join(folder_path, f"{row['headlines']}.txt")
+        txt_file_path = os.path.join(folder_path, f"{str(index)}.txt")
         with open(txt_file_path , "w") as f:
           f.write(single_post )
         
     # Create a zip file for the entire folder
-    zip_file_path = os.path.join(os.getcwd(), "Single_daily_Posts", f"{current_date}/{current_date}.zip")
-    zip_folder(folder_path, zip_file_path)
-    
+    zip_filename = os.path.join(os.getcwd(), "Single_daily_Posts", f"{current_date}/{current_date}.zip")
+    zip_file_path = zip_folder(folder_path,zip_filename)
+    shutil.rmtree(folder_path)
     return zip_file_path
 
 def weekly_news_blog(summary):
-  post = content_gen_post(summary)
+
   os.makedirs(os.getcwd()+"/WeeklyBlog",exist_ok = True)
   folder_path = os.getcwd()+"/WeeklyBlog"
   txt_file_path = os.getcwd()+"/WeeklyBlog/" + str(uuid.uuid4())+".txt"
   token = num_tokens_from_string(summary)
   token_check = process_token(summary, token, max_length = 127000)
-  single_post = content_gen_post(token_check,model = "gpt-4-1106-preview")
-  print(single_post)
-  filename = single_post.split("\n")[0]
+  single_post = content_gen_post(token_check,modelname = "gpt-4-1106-preview")
+  #print(single_post)
+  filename = single_post[:50]
   # Create a PDF file for each news item
   txt_file_path = os.path.join(folder_path, f"{filename}.txt")
   with open(txt_file_path , "w") as f:
     f.write(single_post )
   return txt_file_path
-
 
 
 def rephrase(content):

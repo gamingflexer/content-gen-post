@@ -19,8 +19,8 @@ def compress_pdf(file_path, compressed_path):
         with gzip.open(compressed_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
 
-def zip_folder(folder_path):
-    zip_filename = "folder_path/"+str(uuid.uuid4()) + '.zip'
+def zip_folder(folder_path,zip_filename):
+    # zip_filename = folder_path+"/"+str(uuid.uuid4()) + '.zip'
     file_paths = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
