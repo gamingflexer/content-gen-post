@@ -9,3 +9,4 @@ md2pdf
 langchain-community
 tiktoken
 langchainhub
+tqdm
