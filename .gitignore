@@ -162,3 +162,5 @@ src/Single_dailyPosts/*.pdf
 src/Summarized_dailyBlog/*.pdf
 src/WeeklyBlog/*.pdf
 src/rephrased_content/*.pdf
+src/Single_daily_Posts/*
+src/WeeklyBlog/*
