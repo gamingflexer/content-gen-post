@@ -1,13 +1,16 @@
 import gradio as gr
 import time
-from srcapper.summariser import news_summary, summarized_daily_news_blog, daily_post_single, weekly_news_summary, weekly_news_blog, rephrase
+from srcapper.summariser import news_summary, summarized_daily_news_blog, daily_post_single, weekly_news_blog, rephrase
 from content_maker import scrapper_content
 from utils import extract_text_from_pdf
 from srcapper.data_store import retrieve_records
-
+import pandas as pd
     
 def daily_post_tqdm(links_textbox,pdf_files_upload, progress=gr.Progress()):
-    file_paths = [file.name for file in pdf_files_upload]
+    try:
+      file_paths = [file.name for file in pdf_files_upload]
+    except:
+        print("No pdfs")
     print(links_textbox,pdf_files_upload)
     
     links_extra = links_textbox.split(",")
@@ -16,26 +19,29 @@ def daily_post_tqdm(links_textbox,pdf_files_upload, progress=gr.Progress()):
     
     if scrapper_content(links_extra, pdf_files_upload):
         progress(0.5, desc="Cleaning Links")
-        
+    
     # Convert to content
     content_raw = retrieve_records(date_range='today')
-    list_news = []
-    for result in content_raw:
-        list_news.append(result['news_text'])
-    zip_path_daily = daily_post_single(list_news)
+    print(len(content_raw), "-->")
+    print(content_raw.tail())
+    # list_news = []
+    # for result in content_raw:
+    #     list_news.append(result['news_text'])
+
+    zip_path_daily = daily_post_single(content_raw )
     
     progress(0.8, desc="Saving Data")
     time.sleep(1.5)
-    return "zip_path_daily"
+    return zip_path_daily
 
 def daily_summarised_post_tqdm( progress=gr.Progress()):
     result_week = retrieve_records(date_range='today')
     progress(0.2, desc="Collecting Text")
-    list_news = []
-    for result in result_week:
-        list_news.append(result['news_text'])
+    # list_news = []
+    # for result in result_week:
+    #     list_news.append(result['news_text'])
     progress(0.5, desc=" Daily News Summary")
-    daily_news_summrised = news_summary(result)
+    daily_news_summrised = news_summary(result_week)
     path_summarised_daily_post =  summarized_daily_news_blog(daily_news_summrised)
     progress(0.8, desc=" Generating PDF")
     return path_summarised_daily_post
@@ -43,10 +49,10 @@ def daily_summarised_post_tqdm( progress=gr.Progress()):
 def weekly_summarised_post_tqdm(progress=gr.Progress()):
     result_week = retrieve_records(date_range='week')
     progress(0.2, desc="Collecting Text")
-    list_news = []
-    for result in result_week:
-        list_news.append(result['news_text'])
-    weekly_news_summaried = news_summary(result)
+    # list_news = []
+    # for result in result_week:
+    #     list_news.append(result['news_text'])
+    weekly_news_summaried = news_summary(result_week)
     progress(0.5, desc="Summarising Weekly News")
     weekly_pdf_path = weekly_news_blog(weekly_news_summaried)
     progress(0.8, desc=" Generating PDF")
@@ -103,4 +109,4 @@ with gr.Blocks() as demo:
     start_button_3.click(weekly_summarised_post_tqdm, outputs=loading_bar_text_3)
     pdf_files_upload_2.upload(pdf_rephrasing_tqdm, pdf_files_upload_2, file_output)
 
-demo.launch(server_name='0.0.0.0', server_port=7866)
+demo.launch(server_name='0.0.0.0', server_port=8001,share = True)

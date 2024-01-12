@@ -1,11 +1,13 @@
 from utils import scrape_pdf_links, flatten_pdf_links,regex_clean_links, extract_text_from_pdf_link, indivual_news_scrapper, get_longest_one, get_headlines, num_tokens_from_string, add_timestamp_column
 from srcapper.llm import get_good_links
 from srcapper.main import scrape_websites
-from srcapper.data_store import append_to_database, retrieve_records
+from srcapper.data_store import append_to_database, retrieve_records, check_today_records
 import pandas as pd
 from utils import extract_text_from_pdf
 
 def scrapper_content(website_links, pdf_files_upload_list = [], content_time = 'today', force = False):
+    if check_today_records:
+        return True
     website_links = []
 
     links = ["https://resources.automotivemastermind.com/","https://www.autodealertodaymagazine.com/"]
@@ -62,7 +64,7 @@ def scrapper_content(website_links, pdf_files_upload_list = [], content_time = '
             # drop the row
             df_news.drop(i, inplace=True)
     
-    if len(pdf_files_upload_list) != 0:
+    if pdf_files_upload_list != None:
         for file in pdf_files_upload_list:
             text = extract_text_from_pdf(file)
             df_news = pd.concat([df_news,pd.DataFrame([{'website_link': "pdf", 'news_link': "pdf", 'news_text': text}])], ignore_index=True)
@@ -76,3 +78,4 @@ def scrapper_content(website_links, pdf_files_upload_list = [], content_time = '
 
     df_news = add_timestamp_column(df_news)
     df_news = df_news.drop("news_text_split", axis=1)
+    append_to_database(df_news)
