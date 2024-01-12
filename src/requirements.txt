@@ -7,3 +7,5 @@ gradio
 bs4
 md2pdf
 langchain-community
+tiktoken
+langchainhub
