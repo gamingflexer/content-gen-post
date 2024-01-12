@@ -7,14 +7,39 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from datetime import datetime
 from zipfile import ZipFile
+import shutil
+import gzip
+
+def compress_pdf(file_path, compressed_path):
+    with open(file_path, 'rb') as f_in:
+        with gzip.open(compressed_path, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 
 def zip_folder(folder_path, zip_path):
+    # Check if the folder path exists
+    if not os.path.exists(folder_path):
+        print(f"The folder '{folder_path}' does not exist.")
+        return
+    
     with ZipFile(zip_path, 'w') as zipf:
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, folder_path)
-                zipf.write(file_path, arcname=arcname)
+                
+                # Check if the file is a txt
+                if file.lower().endswith('.txt'):
+                    compressed_path = file_path + '.gz'
+                    compress_pdf(file_path, compressed_path)
+                    arcname = os.path.relpath(compressed_path, folder_path)
+                    zipf.write(compressed_path, arcname=arcname)
+                    
+                    # Remove the temporary compressed file
+                    os.remove(compressed_path)
+                else:
+                    arcname = os.path.relpath(file_path, folder_path)
+                    zipf.write(file_path, arcname=arcname)
+
+
 
 
 def add_timestamp_column(dataframe):
