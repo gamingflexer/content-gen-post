@@ -8,44 +8,35 @@ from urllib.parse import urlparse
 from datetime import datetime
 from zipfile import ZipFile
 import shutil
-import gzip
+import gzip,uuid
+import zipfile
+
+skip_domains = ['news.ycombinator.com']
+keywords = ['FB', 'Insta', 'Twitter', 'Youtube','pinterest','cloudflare', 'compliance', 'AutoDealerToday', 'news', 'search', 'blogs', 'login', 'issues', 'opinion' ,'awards', 'training', 'Reddit', 'tiktok','t.me', '#bc-favorites-modal', 'digitalmagazine', 'whitepapers', 'articles', 'videos', 'javascript', 'rss', 'digital' ,'Linkedin','legal','deals', 'free', 'press', 'coupons', 'offers', 'discounts', 'faq', 'about', 'contact', 'privacy', 'terms', 'conditions', 'policy', 'careers', 'help', 'support', 'subscribe']
 
 def compress_pdf(file_path, compressed_path):
     with open(file_path, 'rb') as f_in:
         with gzip.open(compressed_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
 
-def zip_folder(folder_path, zip_path):
-    # Check if the folder path exists
-    if not os.path.exists(folder_path):
-        print(f"The folder '{folder_path}' does not exist.")
-        return
-    
-    with ZipFile(zip_path, 'w') as zipf:
-        for root, dirs, files in os.walk(folder_path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                
-                # Check if the file is a txt
-                if file.lower().endswith('.txt'):
-                    compressed_path = file_path + '.gz'
-                    compress_pdf(file_path, compressed_path)
-                    arcname = os.path.relpath(compressed_path, folder_path)
-                    zipf.write(compressed_path, arcname=arcname)
-                    
-                    # Remove the temporary compressed file
-                    os.remove(compressed_path)
-                else:
-                    arcname = os.path.relpath(file_path, folder_path)
-                    zipf.write(file_path, arcname=arcname)
+def zip_folder(folder_path):
+    zip_filename = "folder_path/"+str(uuid.uuid4()) + '.zip'
+    file_paths = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith('.txt'):
+                file_paths.append(os.path.join(root, file))
+    with zipfile.ZipFile(zip_filename, 'w') as zip_file:
+        for file_path in file_paths:
+            # Add each file to the zip file
+            zip_file.write(file_path, os.path.basename(file_path))
 
-
+    return zip_filename
 
 
 def add_timestamp_column(dataframe):
     dataframe['timestamp'] = datetime.now()
     return dataframe
-
 
 def num_tokens_from_string(string: str) -> int:
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -58,8 +49,6 @@ def get_headlines(text):
       return text.split("/")[-2]
   else:
       return text.split("/")[-1]
-skip_domains = ['news.ycombinator.com']
-keywords = ['FB', 'Insta', 'Twitter', 'Youtube','pinterest','cloudflare', 'compliance', 'AutoDealerToday', 'news', 'search', 'blogs', 'login', 'issues', 'opinion' ,'awards', 'training', 'Reddit', 'tiktok','t.me', '#bc-favorites-modal', 'digitalmagazine', 'whitepapers', 'articles', 'videos', 'javascript', 'rss', 'digital' ,'Linkedin','legal','deals', 'free', 'press', 'coupons', 'offers', 'discounts', 'faq', 'about', 'contact', 'privacy', 'terms', 'conditions', 'policy', 'careers', 'help', 'support', 'subscribe']
 
 def filter_links_by_domain_main(links, target_domain):
     filtered_links = []
