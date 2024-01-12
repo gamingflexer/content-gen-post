@@ -1,6 +1,6 @@
 import gradio as gr
 import time
-from srcapper.summariser import daily_news_summary, summarized_daily_news_blog, daily_post_single, weekly_news_summary, weekly_news_blog, rephrase
+from srcapper.summariser import news_summary, summarized_daily_news_blog, daily_post_single, weekly_news_summary, weekly_news_blog, rephrase
 from content_maker import scrapper_content
 from utils import extract_text_from_pdf
 from srcapper.data_store import retrieve_records
@@ -14,7 +14,7 @@ def daily_post_tqdm(links_textbox,pdf_files_upload, progress=gr.Progress()):
 
     progress(0.2, desc="Collecting Links")
     
-    if scrapper_content(links_extra, pdf_files_upload_list):
+    if scrapper_content(links_extra, pdf_files_upload):
         progress(0.5, desc="Cleaning Links")
         
     # Convert to content
@@ -28,25 +28,25 @@ def daily_post_tqdm(links_textbox,pdf_files_upload, progress=gr.Progress()):
     time.sleep(1.5)
     return "zip_path_daily"
 
-def daily_summarised_post_tqdm(exp_name, progress=gr.Progress()):
+def daily_summarised_post_tqdm( progress=gr.Progress()):
     result_week = retrieve_records(date_range='today')
     progress(0.2, desc="Collecting Text")
     list_news = []
     for result in result_week:
         list_news.append(result['news_text'])
     progress(0.5, desc=" Daily News Summary")
-    daily_news_summrised = daily_news_summary(list_news)
-    path_summarised_daily_post =  summarized_daily_news_blog(daily_news_summrised,content_type="blog")
+    daily_news_summrised = news_summary(result)
+    path_summarised_daily_post =  summarized_daily_news_blog(daily_news_summrised)
     progress(0.8, desc=" Generating PDF")
     return path_summarised_daily_post
 
-def weekly_summarised_post_tqdm(exp_name, progress=gr.Progress()):
+def weekly_summarised_post_tqdm(progress=gr.Progress()):
     result_week = retrieve_records(date_range='week')
     progress(0.2, desc="Collecting Text")
     list_news = []
     for result in result_week:
         list_news.append(result['news_text'])
-    weekly_news_summaried = weekly_news_summary(list_news)
+    weekly_news_summaried = news_summary(result)
     progress(0.5, desc="Summarising Weekly News")
     weekly_pdf_path = weekly_news_blog(weekly_news_summaried)
     progress(0.8, desc=" Generating PDF")
